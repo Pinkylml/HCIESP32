@@ -1,22 +1,55 @@
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Control de Servo Motor ESP32</title>
+  <meta charset="UTF-8">  <!-- Declarar UTF-8 para manejo correcto de caracteres -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Ajuste para dispositivos móviles -->
+  <title>Selector de Opciones ESP32</title>
   <style>
-    body { font-family: Arial; text-align: center; margin: 20px; }
-    .slider { width: 300px; }
-    .button { padding: 15px 30px; font-size: 20px; margin: 10px; cursor: pointer; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+      background-color: #f4f4f9;
+    }
+    h1 {
+      color: #333;
+    }
+    .menu {
+      font-size: 20px;
+      padding: 10px;
+      cursor: pointer;
+      background-color: #e0e0e0;
+      margin: 5px 0;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+    }
+    .menu:hover {
+      background-color: #ccc;
+    }
+    .selected {
+      color: white;
+      background-color: #007BFF;
+    }
+    #selectedOption {
+      font-weight: bold;
+      color: #007BFF;
+    }
   </style>
 </head>
 <body>
-  <h1>Control de Servo Motor con ESP32</h1>
+  <h1>Interacción con el Pulsador</h1>
 
-  <!-- Servo control using slider -->
-  <h2>Control del Servo</h2>
-  <p>Posicion del Servo: <span id="servoPos">0</span> grados</p>
-  <input type="range" min="0" max="180" class="slider" id="servoSlider" value="0" onchange="updateServoPosition(this.value)">
-  
+  <!-- Lista de opciones -->
+  <div id="menu">
+    <div id="option0" class="menu">Opción 1</div>
+    <div id="option1" class="menu">Opción 2</div>
+    <div id="option2" class="menu">Opción 3</div>
+    <div id="option3" class="menu">Opción 4</div>
+  </div>
+
+  <p>Selección actual: <span id="selectedOption">Opción 1</span></p>
+
   <script>
     // WebSocket connection
     const ws = new WebSocket('ws://' + window.location.hostname + '/ws');
@@ -24,17 +57,39 @@ const char index_html[] PROGMEM = R"rawliteral(
     // When receiving a message from WebSocket
     ws.onmessage = (event) => {
       const message = event.data;
-      if (message.startsWith("Servo:")) {
-        const newPosition = message.replace("Servo:", "");
-        document.getElementById('servoPos').innerText = newPosition;
-        document.getElementById('servoSlider').value = newPosition;
+      if (message.startsWith("Selection:")) {
+        const selectedOption = message.replace("Selection:", "");
+        document.getElementById('selectedOption').innerText = selectedOption;
+        
+        // Update visual indication of selected option
+        for (let i = 0; i < 4; i++) {
+          const optionElement = document.getElementById("option" + i);
+          if (optionElement) {
+            if (optionElement.innerText === selectedOption) {
+              optionElement.classList.add("selected");
+            } else {
+              optionElement.classList.remove("selected");
+            }
+          }
+        }
       }
     };
 
-    // Send the updated servo position via WebSocket
-    function updateServoPosition(pos) {
-      ws.send("SET " + pos);  // Send the new position to the server
+    // Function to update the selected option in the ESP32
+    function updateSelection(option) {
+      ws.send("SET " + option);
     }
+
+    // This will listen for key presses to simulate button actions
+    document.addEventListener('keydown', function(event) {
+      if (event.key === "ArrowUp") {
+        // Move up
+        updateSelection("Opción 1");
+      } else if (event.key === "ArrowDown") {
+        // Move down
+        updateSelection("Opción 2");
+      }
+    });
   </script>
 </body>
 </html>
